@@ -1,0 +1,7 @@
+# Zig
+zig-cache
+zig-out
+
+# To be fetched dynamically 
+# see: ./scripts/install.sh
+ext/windows/webview2/**

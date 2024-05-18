@@ -1,0 +1,3 @@
+[submodule "ext/windows/sdk"]
+	path = ext/windows/sdk
+	url = https://github.com/WriteNaN/winrt.git
