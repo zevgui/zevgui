@@ -3744,7 +3744,7 @@ public:
         return 0;
       });
       RegisterClassExW(&wc);
-
+      // use WS_POPUP here for frameless (windows)
       CreateWindowW(L"webview", L"", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
                     CW_USEDEFAULT, 0, 0, nullptr, nullptr, hInstance, this);
       if (!m_window) {

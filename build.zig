@@ -15,8 +15,9 @@ pub fn build(b: *std.Build) void {
     static.linkLibC();
     static.linkLibCpp();
 
-    static.subsystem = .Windows;
+    //static.subsystem = .Windows;
 
+    // If this is your first time compiling, it might take a while.
     switch (target.result.os.tag) {
         .windows => {
             static.addCSourceFile(.{ .file = .{ .cwd_relative = "ext/webview/webview.cc" }, .flags = &.{"-std=c++14"} });
