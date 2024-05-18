@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2017 Serge Zaitsev
  * Copyright (c) 2022 Steffen André Langnes
+ * Copyright (c) 2024 Write NaN
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -237,7 +238,7 @@ extern "C" {
  * @retval WEBVIEW_ERROR_MISSING_DEPENDENCY
  *         May be returned if WebView2 is unavailable on Windows.
  */
-WEBVIEW_API webview_t webview_create(int debug, void *window);
+WEBVIEW_API webview_t webview_create(int debug, void *window, int frameless);
 
 /**
  * Destroys a webview instance and closes the native window.
@@ -1688,13 +1689,13 @@ private:
 
 class gtk_webkit_engine : public engine_base {
 public:
-  gtk_webkit_engine(bool debug, void *window)
+  gtk_webkit_engine(bool debug, void *window, bool frameless)
       : m_owns_window{!window}, m_window(static_cast<GtkWidget *>(window)) {
     if (m_owns_window) {
       if (!gtk_init_check(nullptr, nullptr)) {
         throw exception{WEBVIEW_ERROR_UNSPECIFIED, "GTK init failed"};
       }
-      m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+      m_window = gtk_window_new(frameless ? GTK_WINDOW_POPUP : GTK_WINDOW_TOPLEVEL);
       on_window_created();
       g_signal_connect(G_OBJECT(m_window), "destroy",
                        G_CALLBACK(+[](GtkWidget *, gpointer arg) {
@@ -2074,13 +2075,17 @@ private:
 
 class cocoa_wkwebview_engine : public engine_base {
 public:
-  cocoa_wkwebview_engine(bool debug, void *window)
+  cocoa_wkwebview_engine(bool debug, void *window, bool frameless)
       : m_debug{debug}, m_window{static_cast<id>(window)}, m_owns_window{
                                                                !window} {
     auto app = get_shared_application();
     // See comments related to application lifecycle in create_app_delegate().
     if (!m_owns_window) {
       set_up_window();
+      // for frameless support, perhaps check:
+      // https://developer.apple.com/documentation/appkit/nswindowstylemask/nswindowstylemaskborderless
+      // https://developer.apple.com/documentation/appkit/nswindowstylemask/nswindowstylemasktitled
+      // since I don't own a MAC, updates for it would be quite slow. sorry!
     } else {
       // Only set the app delegate if it hasn't already been set.
       auto delegate = objc::msg_send<id>(app, "delegate"_sel);
@@ -3647,7 +3652,7 @@ private:
 
 class win32_edge_engine : public engine_base {
 public:
-  win32_edge_engine(bool debug, void *window) : m_owns_window{!window} {
+  win32_edge_engine(bool debug, void *window, bool frameless) : m_owns_window{!window} {
     if (!is_webview2_available()) {
       throw exception{WEBVIEW_ERROR_MISSING_DEPENDENCY,
                       "WebView2 is unavailable"};
@@ -3744,8 +3749,7 @@ public:
         return 0;
       });
       RegisterClassExW(&wc);
-      // use WS_POPUP here for frameless (windows)
-      CreateWindowW(L"webview", L"", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+      CreateWindowW(L"webview", L"", frameless ? WS_POPUP : WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
                     CW_USEDEFAULT, 0, 0, nullptr, nullptr, hInstance, this);
       if (!m_window) {
         throw exception{WEBVIEW_ERROR_INVALID_STATE, "Window is null"};
@@ -4250,12 +4254,12 @@ webview *cast_to_webview(void *w) {
 } // namespace detail
 } // namespace webview
 
-WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
+WEBVIEW_API webview_t webview_create(int debug, void *wnd, int frameless) {
   using namespace webview::detail;
   webview::webview *w{};
   auto err = api_filter(
       [=]() -> webview::result<webview::webview *> {
-        return new webview::webview{static_cast<bool>(debug), wnd};
+        return new webview::webview{static_cast<bool>(debug), wnd, static_cast<bool>(frameless)};
       },
       [&](webview::webview *w_) { w = w_; });
   if (err == WEBVIEW_ERROR_OK) {

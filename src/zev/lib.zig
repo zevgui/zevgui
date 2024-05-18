@@ -11,13 +11,13 @@ const Options = struct {
     size: ?WebView.WindowSizeHint = null,
     allocator: *std.mem.Allocator,
     title: ?[:0]const u8 = null,
-    frame: ?bool = true
+    frameless: ?bool = false
 };
 
 const zev = @This();
 
 pub fn init(opts: Options) zev {
-    const webview = WebView.create(opts.debug orelse false, null);
+    const webview = WebView.create(opts.debug orelse false, null, opts.frameless.?);
     webview.setTitle(opts.title orelse "Zev App");
 
     return zev{ .allocator = opts.allocator, .internal = .{ .webview = webview, .size = opts.size.? } };

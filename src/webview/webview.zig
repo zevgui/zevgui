@@ -41,8 +41,8 @@ pub const WebView = struct {
         Fixed
     };
 
-    pub fn create(debug: bool, window: ?*anyopaque) Self {
-        return Self{ .webview = raw.webview_create(@intFromBool(debug), window) };
+    pub fn create(debug: bool, window: ?*anyopaque, frameless: bool) Self {
+        return Self{ .webview = raw.webview_create(@intFromBool(debug), window, frameless) };
     }
 
     pub fn run(self: Self) void {

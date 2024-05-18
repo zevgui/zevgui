@@ -41,7 +41,7 @@ pub const webview_version_info_t = extern struct {
     build_metadata: [48]u8,
 };
 pub const webview_t = ?*anyopaque;
-pub extern fn webview_create(debug: c_int, window: ?*anyopaque) webview_t;
+pub extern fn webview_create(debug: c_int, window: ?*anyopaque, frameless: bool) webview_t;
 pub extern fn webview_destroy(w: webview_t) void;
 pub extern fn webview_run(w: webview_t) void;
 pub extern fn webview_terminate(w: webview_t) void;
