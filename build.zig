@@ -31,7 +31,18 @@ pub fn build(b: *std.Build) void {
             static.linkSystemLibrary("shell32");
             static.linkSystemLibrary("user32");
         }, 
-        else => {}
+        .macos => {
+            static.addCSourceFile(.{ .file = .{ .cwd_relative = "ext/webview/webview.cc" }, .flags = &.{"-std=c++11"} });
+            static.linkSystemLibrary("WebKit");
+        },
+        .linux => {
+            static.addCSourceFile(.{ .file = .{ .cwd_relative = "ext/webview/webview.cc" }, .flags = &.{"-std=c++11"} });
+            static.linkSystemLibrary("gtk+-3.0");
+            static.linkSystemLibrary("webkit2gtk-4.0");
+        },
+        else => { 
+            @panic("Unsupported target! please create an Issue on github if you wish to add this.");
+        }
     }
 
     b.installArtifact(static);
